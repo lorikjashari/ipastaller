@@ -23,14 +23,23 @@ ios-install/
 absolute and correct for whatever domain it's served from (production,
 preview deployments, custom domain).
 
-## 1. Generate the `.ipa` (on a Mac)
+## 1. Add a signed `.ipa`
 
-```bash
-cd ../ios-hello
-open HelloIPA.xcodeproj          # pick your Team in Signing & Capabilities
-./scripts/build-ipa.sh           # → build/HelloIPA.ipa
-cp build/HelloIPA.ipa ../ios-install/HelloIPA.ipa
+Drop a **signed** build in the repo root as `HelloIPA.ipa` (or point
+`APP_IPA` at another filename):
+
 ```
+HelloIPA.ipa
+```
+
+Build it with Xcode (this repo doesn't contain the app source): open the
+app project, set a Team under *Signing & Capabilities*, then
+*Product → Archive → Distribute App → Ad Hoc / Enterprise → Export*.
+An `.ipa` is just a ZIP — `Payload/<App>.app` — so you can also repackage
+one with the script from the companion project (`scripts/make-ipa.py`).
+
+Keep it under GitHub's 100 MB per-file limit; a simple app is a few MB.
+Unsigned builds deploy fine but will **fail at install time**.
 
 ## 2. Deploy
 
