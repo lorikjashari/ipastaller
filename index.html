@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0a1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Install Hello IPA</title>
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" href="/icon.png">
+<style>
+  :root {
+    --bg: #0b0a1f;
+    --fg: #f4f3ff;
+    --muted: rgba(244, 243, 255, .55);
+    --line: rgba(244, 243, 255, .10);
+    --accent: #6c63ff;
+    --warn: #ffb648;
+    --bad: #ff6b6b;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100%;
+    display: grid;
+    place-items: center;
+    padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(108, 99, 255, .38), transparent 60%),
+      radial-gradient(90% 60% at 100% 100%, rgba(255, 99, 180, .14), transparent 60%),
+      var(--bg);
+    color: var(--fg);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 400px;
+    padding: 32px 26px 24px;
+    border: 1px solid var(--line);
+    border-radius: 30px;
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025));
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.06);
+    text-align: center;
+  }
+
+  .icon {
+    width: 88px; height: 88px;
+    border-radius: 21px;
+    display: block;
+    margin: 0 auto 18px;
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 12px 28px -8px rgba(0,0,0,.7);
+    background: #1a1836;
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 27px;
+    line-height: 1.15;
+    letter-spacing: -.02em;
+    font-weight: 700;
+  }
+
+  .sub {
+    margin: 0 0 14px;
+    font-size: 14.5px;
+    color: var(--muted);
+    text-wrap: balance;
+  }
+
+  .meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 22px;
+    padding: 5px 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+
+  .meta code {
+    font: inherit;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+  }
+
+  .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .6; }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 16px 20px;
+    border: 0;
+    border-radius: 16px;
+    background: #fff;
+    color: #2b2a6b;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -.01em;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .12s ease, opacity .12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:active { transform: scale(.985); }
+
+  .btn[aria-disabled="true"] {
+    background: rgba(255,255,255,.09);
+    color: rgba(244,243,255,.38);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .btn[aria-disabled="true"]:active { transform: none; }
+
+  .hint {
+    margin: 13px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--muted);
+    text-wrap: balance;
+  }
+
+  .hint[data-tone="warn"] { color: var(--warn); }
+  .hint[data-tone="bad"] { color: var(--bad); }
+
+  details {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    text-align: left;
+    font-size: 13px;
+    color: rgba(244,243,255,.62);
+  }
+
+  summary {
+    cursor: pointer;
+    color: rgba(244,243,255,.85);
+    font-weight: 550;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: " ＋"; opacity: .5; }
+  details[open] summary::after { content: " −"; }
+
+  details ol { margin: 12px 0 0; padding-left: 18px; }
+  details li { margin: 7px 0; }
+  details code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: rgba(255,255,255,.07);
+    padding: 2px 5px;
+    border-radius: 5px;
+    overflow-wrap: anywhere;
+  }
+
+  .foot {
+    margin: 18px 0 0;
+    font-size: 11px;
+    color: rgba(244,243,255,.28);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<main class="card">
+  <img class="icon" src="/icon.png" alt="" width="88" height="88">
+  <h1 id="title">Hello IPA</h1>
+  <p class="sub">Tap install, confirm, done. No App Store.</p>
+
+  <div class="meta">
+    <code id="bundle">com.example.helloipa</code>
+    <span class="dot"></span>
+    <span>v<span id="version">1.0</span></span>
+  </div>
+
+  <a id="install" class="btn" role="button" aria-disabled="true" aria-live="polite">Install</a>
+  <p class="hint" id="hint">Checking availability…</p>
+
+  <details>
+    <summary>Not working?</summary>
+    <ol>
+      <li>Open this page in <strong>Safari</strong> — in-app browsers and Chrome cannot install apps.</li>
+      <li>Tap <strong>Install</strong>, then <strong>Install</strong> again in the system dialog.</li>
+      <li>The app must be signed with a profile that includes <em>this</em> iPhone (Ad Hoc / Enterprise / Development).</li>
+      <li>"Cannot connect to server" = the <code>.ipa</code> is missing, unsigned, or the manifest URL is not HTTPS.</li>
+      <li>Free-account signing expires after 7 days; re-install to renew.</li>
+    </ol>
+    <p id="debug" hidden style="margin:12px 0 0;font-size:11px">
+      manifest: <code id="manifest-url"></code>
+    </p>
+  </details>
+
+  <p class="foot">Served over HTTPS · on-device install</p>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const ua = navigator.userAgent;
+
+  // ?as=ios renders the iPhone state on any device, for previewing/debugging.
+  const previewIOS = new URLSearchParams(location.search).get("as") === "ios";
+
+  const isIOS =
+    previewIOS ||
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isSafari =
+    previewIOS ||
+    (/Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|Chrome\/|Android/.test(ua));
+  const isSecure = location.protocol === "https:";
+
+  const cfg = {
+    title: "Hello IPA",
+    bundleId: "com.example.helloipa",
+    version: "1.0",
+    ipa: "/HelloIPA.ipa",
+  };
+
+  let ipaReady = false;
+
+  const install = $("install");
+  const hint = $("hint");
+
+  function say(text, tone) {
+    hint.textContent = text;
+    if (tone) hint.dataset.tone = tone;
+    else delete hint.dataset.tone;
+  }
+
+  function lock() {
+    install.removeAttribute("href");
+    install.setAttribute("aria-disabled", "true");
+  }
+
+  function unlock(href, label) {
+    install.setAttribute("href", href);
+    install.removeAttribute("aria-disabled");
+    if (label) install.textContent = label;
+  }
+
+  function render() {
+    const manifest = `${location.origin}/api/manifest`;
+    $("manifest-url").textContent = manifest;
+
+    if (!isSecure && !previewIOS) {
+      lock();
+      install.textContent = "Install";
+      return say(
+        "This page must be served over HTTPS. Deploy it to Vercel, then reopen the link.",
+        "bad"
+      );
+    }
+
+    if (!ipaReady) {
+      lock();
+      install.textContent = "Install";
+      return say(
+        `No .ipa uploaded yet. Add it as ${cfg.ipa} next to index.html, then redeploy.`,
+        "warn"
+      );
+    }
+
+    if (!isIOS) {
+      // Desktop / Android: hand the link over instead of pretending to install.
+      install.textContent = "Copy link for iPhone";
+      install.removeAttribute("aria-disabled");
+      install.removeAttribute("href");
+      install.onclick = async (e) => {
+        e.preventDefault();
+        try {
+          await navigator.clipboard.writeText(location.href);
+          say("Link copied. Open it in Safari on your iPhone.", "");
+        } catch {
+          say("Open this URL in Safari on your iPhone: " + location.href, "");
+        }
+      };
+      return say("App installs are only possible from iOS Safari.");
+    }
+
+    install.onclick = null;
+    unlock(
+      `itms-services://?action=download-manifest&url=${encodeURIComponent(manifest)}`,
+      "Install"
+    );
+    $("debug").hidden = false;
+
+    if (previewIOS) {
+      return say("Preview mode. On a real iPhone, this starts the install.", "");
+    }
+
+    if (!isSafari) {
+      return say(
+        "You're not in Safari. Tap Install — if nothing happens, copy this link and paste it into Safari.",
+        "warn"
+      );
+    }
+    say("Tap Install, then confirm in the dialog.");
+  }
+
+  async function boot() {
+    try {
+      const res = await fetch("/api/config", { cache: "no-store" });
+      if (res.ok) Object.assign(cfg, await res.json());
+    } catch { /* static preview without functions: keep defaults */ }
+
+    $("title").textContent = cfg.title;
+    $("bundle").textContent = cfg.bundleId;
+    $("version").textContent = cfg.version;
+    document.title = `Install ${cfg.title}`;
+
+    try {
+      const res = await fetch(cfg.ipa, { method: "HEAD", cache: "no-store" });
+      ipaReady = res.ok;
+    } catch {
+      ipaReady = false;
+    }
+
+    render();
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
