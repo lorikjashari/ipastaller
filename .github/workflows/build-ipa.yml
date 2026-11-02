@@ -70,9 +70,24 @@ jobs:
         if: env.UNSIGNED == 'true'
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/Payload"
-          cp -R "$RUNNER_TEMP/HelloIPA.xcarchive/Products/Applications/HelloIPA.app" "$RUNNER_TEMP/Payload/"
-          ( cd "$RUNNER_TEMP" && ditto -c -k --sequesterRsrc --keepParent Payload HelloIPA-unsigned.ipa )
+          cd "$RUNNER_TEMP"
+
+          echo "== archive contents =="
+          find HelloIPA.xcarchive/Products -maxdepth 2 -print || true
+
+          APP="$(find HelloIPA.xcarchive -maxdepth 4 -name '*.app' -type d | head -n1)"
+          if [ -z "$APP" ]; then
+            echo "::error::No .app found inside the archive"
+            exit 1
+          fi
+          echo "app: $APP"
+
+          rm -rf Payload HelloIPA-unsigned.ipa
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          ls -la Payload
+
+          /usr/bin/zip -qry HelloIPA-unsigned.ipa Payload
           ls -lh HelloIPA-unsigned.ipa
           echo "::notice::Unsigned ipa ready - give it to Sideloadly/AltStore to sign and install."
 
