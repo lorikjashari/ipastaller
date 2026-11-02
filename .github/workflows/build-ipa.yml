@@ -89,6 +89,7 @@ jobs:
 
           /usr/bin/zip -qry HelloIPA-unsigned.ipa Payload
           ls -lh HelloIPA-unsigned.ipa
+          cp HelloIPA-unsigned.ipa "$GITHUB_WORKSPACE/"
           echo "::notice::Unsigned ipa ready - give it to Sideloadly/AltStore to sign and install."
 
       - name: Upload unsigned artifact

@@ -13,6 +13,7 @@ const DEFAULTS = {
   bundleId: "com.lorikjashari.helloipa",
   version: "1.0",
   ipa: "/HelloIPA.ipa",
+  repo: "lorikjashari/ipastaller",
 };
 
 const esc = (value) =>
@@ -26,6 +27,7 @@ const resolve = () => ({
   bundleId: process.env.APP_BUNDLE_ID || DEFAULTS.bundleId,
   version: process.env.APP_VERSION || DEFAULTS.version,
   ipa: process.env.APP_IPA || DEFAULTS.ipa,
+  repo: process.env.APP_REPO ?? DEFAULTS.repo,
 });
 
 function handler(req, res) {

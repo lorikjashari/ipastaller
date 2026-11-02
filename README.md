@@ -113,6 +113,7 @@ All optional, set as Vercel env vars and redeploy:
 | `APP_BUNDLE_ID` | `com.lorikjashari.helloipa` | Must match the built app |
 | `APP_VERSION` | `1.0` | `CFBundleVersion` of the app |
 | `APP_IPA` | `/HelloIPA.ipa` | Path to the ipa on this site |
+| `APP_REPO` | `lorikjashari/ipastaller` | `owner/repo`, used for the "get the .ipa from Actions" link |
 
 ## Local preview
 

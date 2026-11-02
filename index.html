@@ -136,6 +136,43 @@
   .hint[data-tone="warn"] { color: var(--warn); }
   .hint[data-tone="bad"] { color: var(--bad); }
 
+  .fallback {
+    margin-top: 14px;
+    padding: 14px 15px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255,255,255,.03);
+    text-align: left;
+  }
+
+  .fallback-link {
+    display: inline-block;
+    margin-bottom: 10px;
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,.3);
+    padding-bottom: 1px;
+  }
+
+  .steps {
+    margin: 0;
+    padding-left: 17px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(244,243,255,.66);
+  }
+
+  .steps li { margin: 5px 0; }
+
+  .fine {
+    margin: 10px 0 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: rgba(244,243,255,.38);
+  }
+
   details {
     margin-top: 22px;
     padding-top: 18px;
@@ -190,6 +227,22 @@
   <a id="install" class="btn" role="button" aria-disabled="true" aria-live="polite">Install</a>
   <p class="hint" id="hint">Checking availability…</p>
 
+  <div class="fallback" id="fallback" hidden>
+    <a class="fallback-link" id="actions-link" href="#" target="_blank" rel="noreferrer">
+      Get the .ipa from GitHub Actions →
+    </a>
+    <ol class="steps">
+      <li>Open the latest run and download the <code>HelloIPA-unsigned</code> artifact.</li>
+      <li>Drag the <code>.ipa</code> into <strong>Sideloadly</strong> (free) with your iPhone plugged in.</li>
+      <li>Sign in with your Apple ID, then trust it in <em>Settings → General → VPN &amp; Device Management</em>.</li>
+    </ol>
+    <p class="fine">
+      Installing without a paid Apple Developer certificate always needs this
+      on-device signing step — Apple ties every install to an Apple ID, so the
+      Over-the-Air button above can't do it alone.
+    </p>
+  </div>
+
   <details>
     <summary>Not working?</summary>
     <ol>
@@ -229,6 +282,7 @@
     bundleId: "com.lorikjashari.helloipa",
     version: "1.0",
     ipa: "/HelloIPA.ipa",
+    repo: "lorikjashari/ipastaller",
   };
 
   let ipaReady = false;
@@ -256,6 +310,7 @@
   function render() {
     const manifest = `${location.origin}/api/manifest`;
     $("manifest-url").textContent = manifest;
+    $("fallback").hidden = ipaReady;
 
     if (!isSecure && !previewIOS) {
       lock();
@@ -269,10 +324,7 @@
     if (!ipaReady) {
       lock();
       install.textContent = "Install";
-      return say(
-        `No .ipa uploaded yet. Add it as ${cfg.ipa} next to index.html, then redeploy.`,
-        "warn"
-      );
+      return say("Nothing to install yet — here's how to get the app on your phone.", "warn");
     }
 
     if (!isIOS) {
@@ -322,6 +374,13 @@
     $("bundle").textContent = cfg.bundleId;
     $("version").textContent = cfg.version;
     document.title = `Install ${cfg.title}`;
+
+    if (cfg.repo) {
+      $("actions-link").href =
+        `https://github.com/${cfg.repo}/actions/workflows/build-ipa.yml`;
+    } else {
+      $("actions-link").hidden = true;
+    }
 
     try {
       const res = await fetch(cfg.ipa, { method: "HEAD", cache: "no-store" });
