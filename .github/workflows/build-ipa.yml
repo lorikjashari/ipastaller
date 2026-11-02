@@ -17,6 +17,10 @@ name: Build signed IPA
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "HelloIPA.ipa"
 
 permissions:
   contents: write
@@ -94,7 +98,7 @@ jobs:
             -authenticationKeyID "$KEY_ID" \
             -authenticationKeyIssuerID "$ISSUER_ID"
 
-      - name: Archive (unsigned, compile check only)
+      - name: Archive (unsigned)
         if: ${{ secrets.ASC_KEY_P8 == '' }}
         working-directory: app
         run: |
@@ -107,6 +111,24 @@ jobs:
             -archivePath "$RUNNER_TEMP/HelloIPA.xcarchive" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
+
+      - name: Package unsigned ipa
+        if: ${{ secrets.ASC_KEY_P8 == '' }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/Payload"
+          cp -R "$RUNNER_TEMP/HelloIPA.xcarchive/Products/Applications/HelloIPA.app" "$RUNNER_TEMP/Payload/"
+          ( cd "$RUNNER_TEMP" && ditto -c -k --sequesterRsrc --keepParent Payload HelloIPA-unsigned.ipa )
+          ls -lh HelloIPA-unsigned.ipa
+          echo "::notice::Unsigned ipa - hand this to Sideloadly/AltStore to sign and install."
+
+      - name: Upload unsigned artifact
+        if: ${{ secrets.ASC_KEY_P8 == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: HelloIPA-unsigned
+          path: HelloIPA-unsigned.ipa
+          if-no-files-found: error
 
       - name: Publish signed ipa
         if: ${{ secrets.ASC_KEY_P8 != '' }}

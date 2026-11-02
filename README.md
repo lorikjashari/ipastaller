@@ -60,6 +60,22 @@ cp build/HelloIPA.ipa ..     # repo root
 Unsigned builds deploy fine but will **fail at install time**. Keep the file
 under GitHub's 100 MB limit; a simple app is a few MB.
 
+**Option C — Windows only, free Apple ID (no Mac, no $99)**
+
+1. Push anything (or *Actions → Build signed IPA*). CI compiles the app on a
+   free macOS runner and uploads **`HelloIPA-unsigned`** to the run's
+   *Artifacts* section.
+2. Install [Sideloadly](https://sideloadly.io) and Apple's iTunes (not the
+   Microsoft Store version) on the PC, for the USB drivers.
+3. Download the artifact, unzip, drag `HelloIPA-unsigned.ipa` into Sideloadly,
+   plug in the iPhone, enter your free Apple ID, press **Start**.
+4. On the iPhone: *Settings → General → VPN & Device Management* → trust your
+   developer certificate.
+
+The app runs for **7 days** with a free Apple ID, then re-sign the same way.
+This path bypasses the Vercel page entirely — OTA (`itms-services`) requires a
+paid distribution certificate, so the web installer only works with Option A.
+
 ## 2. Deploy
 
 The repo root **is** the site: framework preset **Other**, no build command.
