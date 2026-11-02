@@ -94,11 +94,11 @@ jobs:
             -authenticationKeyID "$KEY_ID" \
             -authenticationKeyIssuerID "$ISSUER_ID"
 
-      - name: Archive (unsigned)
+      - name: Archive (unsigned, compile check only)
         if: ${{ secrets.ASC_KEY_P8 == '' }}
         working-directory: app
         run: |
-          echo "::warning::No signing secrets - the ipa will NOT be installable."
+          echo "::warning::No signing secrets - this run only verifies that the app compiles. Nothing is published."
           xcodebuild archive \
             -project HelloIPA.xcodeproj \
             -scheme HelloIPA \
@@ -108,17 +108,12 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
-      - name: Package and publish ipa
+      - name: Publish signed ipa
+        if: ${{ secrets.ASC_KEY_P8 != '' }}
         run: |
           set -euo pipefail
-          if [ -f "$RUNNER_TEMP/export/HelloIPA.ipa" ]; then
-            SRC="$RUNNER_TEMP/export/HelloIPA.ipa"
-          else
-            mkdir -p "$RUNNER_TEMP/Payload"
-            cp -R "$RUNNER_TEMP/HelloIPA.xcarchive/Products/Applications/HelloIPA.app" "$RUNNER_TEMP/Payload/"
-            ( cd "$RUNNER_TEMP" && ditto -c -k --sequesterRsrc --keepParent Payload HelloIPA.ipa )
-            SRC="$RUNNER_TEMP/HelloIPA.ipa"
-          fi
+          SRC="$RUNNER_TEMP/export/HelloIPA.ipa"
+          test -f "$SRC" || { echo "::error::Export produced no ipa"; exit 1; }
 
           cp "$SRC" HelloIPA.ipa
           ls -lh HelloIPA.ipa
@@ -134,6 +129,7 @@ jobs:
           fi
 
       - name: Upload artifact
+        if: ${{ secrets.ASC_KEY_P8 != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: HelloIPA
