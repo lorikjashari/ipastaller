@@ -7,10 +7,13 @@ from Safari — no App Store, no cable. Deploys to Vercel as-is.
 ios-install/
 ├─ index.html        landing page + itms-services link
 ├─ icon.png          app icon shown in the install dialog
-├─ HelloIPA.ipa      ← you add this (signed build)
-└─ api/
-   ├─ config.js      GET /api/config   → title / bundle id / version / ipa path
-   └─ manifest.js    GET /api/manifest → manifest.plist
+├─ HelloIPA.ipa      ← the signed build Vercel serves
+├─ api/
+│  ├─ config.js      GET /api/config   → title / bundle id / version / ipa path
+│  └─ manifest.js    GET /api/manifest → manifest.plist
+├─ app/              the iOS app itself (SwiftUI, Xcode project)
+└─ .github/
+   └─ workflows/build-ipa.yml   builds + signs the ipa on a macOS runner
 ```
 
 ## How it works
@@ -23,40 +26,47 @@ ios-install/
 absolute and correct for whatever domain it's served from (production,
 preview deployments, custom domain).
 
-## 1. Add a signed `.ipa`
+## 1. Get a signed `.ipa` into the repo root
 
-Drop a **signed** build in the repo root as `HelloIPA.ipa` (or point
-`APP_IPA` at another filename):
+The app source is in `app/`. Bundle ID: `com.lorikjashari.helloipa`.
 
+**Option A — let GitHub build it (no Mac needed)**
+
+Add four repo secrets (*Settings → Secrets and variables → Actions*):
+
+| Secret | Where to get it |
+| --- | --- |
+| `APPLE_TEAM_ID` | developer.apple.com → Membership (10 chars) |
+| `ASC_KEY_ID` | App Store Connect → Users and Access → Integrations → App Store Connect API |
+| `ASC_ISSUER_ID` | same page |
+| `ASC_KEY_P8` | contents of the downloaded `AuthKey_XXXX.p8` |
+
+Then *Actions → Build signed IPA → Run workflow*. It archives, exports an
+ad-hoc ipa, commits it as `HelloIPA.ipa` and Vercel redeploys on its own.
+
+Requires a paid Apple Developer account, and your iPhone's UDID must be
+registered under *Certificates, Identifiers & Profiles → Devices* — ad-hoc
+profiles only install on devices listed in the profile.
+
+**Option B — build on a Mac**
+
+```bash
+cd app
+open HelloIPA.xcodeproj      # set your Team, then Product → Archive
+./scripts/build-ipa.sh       # → build/HelloIPA.ipa
+cp build/HelloIPA.ipa ..     # repo root
 ```
-HelloIPA.ipa
-```
 
-Build it with Xcode (this repo doesn't contain the app source): open the
-app project, set a Team under *Signing & Capabilities*, then
-*Product → Archive → Distribute App → Ad Hoc / Enterprise → Export*.
-An `.ipa` is just a ZIP — `Payload/<App>.app` — so you can also repackage
-one with the script from the companion project (`scripts/make-ipa.py`).
-
-Keep it under GitHub's 100 MB per-file limit; a simple app is a few MB.
-Unsigned builds deploy fine but will **fail at install time**.
+Unsigned builds deploy fine but will **fail at install time**. Keep the file
+under GitHub's 100 MB limit; a simple app is a few MB.
 
 ## 2. Deploy
 
-**Option A — CLI (fastest)**
-
-```bash
-cd ios-install
-npx vercel --prod
-```
-
-**Option B — dashboard**
-
-Import the repo on vercel.com → set **Root Directory** to `ios-install` →
-Framework preset **Other** → Deploy.
+The repo root **is** the site: framework preset **Other**, no build command.
+Import it on vercel.com and hit Deploy (or `npx vercel --prod` from the repo root).
 
 If the page says *"No .ipa uploaded yet"*, the file isn't in the deployment —
-add it, redeploy.
+push it and Vercel redeploys automatically.
 
 ## 3. Install on the iPhone
 
@@ -84,7 +94,7 @@ All optional, set as Vercel env vars and redeploy:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `APP_TITLE` | `Hello IPA` | Name in the install dialog |
-| `APP_BUNDLE_ID` | `com.example.helloipa` | Must match the built app |
+| `APP_BUNDLE_ID` | `com.lorikjashari.helloipa` | Must match the built app |
 | `APP_VERSION` | `1.0` | `CFBundleVersion` of the app |
 | `APP_IPA` | `/HelloIPA.ipa` | Path to the ipa on this site |
 

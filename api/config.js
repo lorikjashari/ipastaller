@@ -3,7 +3,7 @@
 
 const DEFAULTS = {
   title: "Hello IPA",
-  bundleId: "com.example.helloipa",
+  bundleId: "com.lorikjashari.helloipa",
   version: "1.0",
   ipa: "/HelloIPA.ipa",
 };

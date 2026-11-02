@@ -1,0 +1,141 @@
+name: Build signed IPA
+
+# Builds the app on a GitHub-hosted macOS runner, so you don't need a Mac.
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   APPLE_TEAM_ID   10-character Team ID   (developer.apple.com -> Membership)
+#   ASC_KEY_ID      App Store Connect API key ID
+#   ASC_ISSUER_ID   App Store Connect issuer ID
+#   ASC_KEY_P8      full contents of the AuthKey_XXXXXXXXXX.p8 file
+#                   (App Store Connect -> Users and Access -> Integrations)
+#
+# Works with automatic signing. The iPhone must be registered as a device
+# in the developer portal, otherwise the ad-hoc profile won't include it.
+#
+# Without the secrets it still compiles the project and produces an
+# UNSIGNED ipa, which proves the code builds but cannot be installed.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-ipa
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    env:
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: xcodebuild -version
+
+      - name: Import App Store Connect key
+        if: ${{ secrets.ASC_KEY_P8 != '' }}
+        env:
+          KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          printf '%s' "$KEY_P8" > "$HOME/private_keys/AuthKey_${KEY_ID}.p8"
+          chmod 600 "$HOME/private_keys/AuthKey_${KEY_ID}.p8"
+
+      - name: Archive (signed)
+        if: ${{ secrets.ASC_KEY_P8 != '' }}
+        working-directory: app
+        run: |
+          xcodebuild archive \
+            -project HelloIPA.xcodeproj \
+            -scheme HelloIPA \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/HelloIPA.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${KEY_ID}.p8" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic
+
+      - name: Export ad-hoc ipa
+        if: ${{ secrets.ASC_KEY_P8 != '' }}
+        working-directory: app
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>release-testing</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
+              <key>teamID</key>
+              <string>${TEAM_ID}</string>
+              <key>destination</key>
+              <string>export</string>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/HelloIPA.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${KEY_ID}.p8" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID"
+
+      - name: Archive (unsigned)
+        if: ${{ secrets.ASC_KEY_P8 == '' }}
+        working-directory: app
+        run: |
+          echo "::warning::No signing secrets - the ipa will NOT be installable."
+          xcodebuild archive \
+            -project HelloIPA.xcodeproj \
+            -scheme HelloIPA \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/HelloIPA.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Package and publish ipa
+        run: |
+          set -euo pipefail
+          if [ -f "$RUNNER_TEMP/export/HelloIPA.ipa" ]; then
+            SRC="$RUNNER_TEMP/export/HelloIPA.ipa"
+          else
+            mkdir -p "$RUNNER_TEMP/Payload"
+            cp -R "$RUNNER_TEMP/HelloIPA.xcarchive/Products/Applications/HelloIPA.app" "$RUNNER_TEMP/Payload/"
+            ( cd "$RUNNER_TEMP" && ditto -c -k --sequesterRsrc --keepParent Payload HelloIPA.ipa )
+            SRC="$RUNNER_TEMP/HelloIPA.ipa"
+          fi
+
+          cp "$SRC" HelloIPA.ipa
+          ls -lh HelloIPA.ipa
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add HelloIPA.ipa
+          if git diff --cached --quiet; then
+            echo "ipa unchanged, nothing to commit"
+          else
+            git commit -m "chore: build signed ipa from ${GITHUB_SHA::7}"
+            git push
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HelloIPA
+          path: HelloIPA.ipa
+          if-no-files-found: error
