@@ -4,10 +4,13 @@
 // The .ipa URL inside a manifest MUST be absolute, which is why this is a
 // function and not a static file: it fills in the real host per request, so
 // it works on localhost, *.vercel.app previews and custom domains alike.
+//
+// DEFAULTS lives here and is re-used by config.js so the two endpoints can
+// never disagree about the bundle id (that bug shipped once already).
 
 const DEFAULTS = {
   title: "Hello IPA",
-  bundleId: "com.example.helloipa",
+  bundleId: "com.lorikjashari.helloipa",
   version: "1.0",
   ipa: "/HelloIPA.ipa",
 };
@@ -18,16 +21,20 @@ const esc = (value) =>
     (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c])
   );
 
-module.exports = (req, res) => {
+const resolve = () => ({
+  title: process.env.APP_TITLE || DEFAULTS.title,
+  bundleId: process.env.APP_BUNDLE_ID || DEFAULTS.bundleId,
+  version: process.env.APP_VERSION || DEFAULTS.version,
+  ipa: process.env.APP_IPA || DEFAULTS.ipa,
+});
+
+function handler(req, res) {
   const host = req.headers["x-forwarded-host"] || req.headers.host;
   const proto = (req.headers["x-forwarded-proto"] || "https").split(",")[0].trim();
   const base = `${proto}://${host}`;
 
-  const appTitle = process.env.APP_TITLE || DEFAULTS.title;
-  const bundleId = process.env.APP_BUNDLE_ID || DEFAULTS.bundleId;
-  const version = process.env.APP_VERSION || DEFAULTS.version;
-
-  const ipaUrl = new URL(process.env.APP_IPA || DEFAULTS.ipa, base).toString();
+  const { title, bundleId, version, ipa } = resolve();
+  const ipaUrl = new URL(ipa, base).toString();
   const iconUrl = new URL("/icon.png", base).toString();
 
   const plist = `<?xml version="1.0" encoding="UTF-8"?>
@@ -63,7 +70,7 @@ module.exports = (req, res) => {
 				<key>kind</key>
 				<string>software</string>
 				<key>title</key>
-				<string>${esc(appTitle)}</string>
+				<string>${esc(title)}</string>
 			</dict>
 		</dict>
 	</array>
@@ -74,4 +81,8 @@ module.exports = (req, res) => {
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.status(200).send(plist);
-};
+}
+
+module.exports = handler;
+module.exports.DEFAULTS = DEFAULTS;
+module.exports.resolve = resolve;
